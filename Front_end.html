@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Suburbia - Ventas Especiales</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .table-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .table-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .table-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .suburbia-pink { color: #d81b60; }
+        .bg-suburbia-pink { background-color: #d81b60; }
+        .border-suburbia-pink { border-color: #d81b60; }
+        
+        /* Animación pulso para el cargador */
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.85; }
+        }
+        .animate-logo-pulse {
+            animation: logoPulse 1.8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800 flex flex-col relative">
+
+    <!-- FULLSCREEN LOADING OVERLAY -->
+    <div id="loading-screen" class="fixed inset-0 z-50 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 transition-opacity duration-300">
+        <div class="flex flex-col items-center max-w-md w-full text-center space-y-6">
+            
+            <!-- Logo Animado -->
+            <div class="relative flex items-center justify-center">
+                <div class="w-20 h-20 rounded-full bg-suburbia-pink flex items-center justify-center text-white font-extrabold text-4xl shadow-lg animate-logo-pulse">
+                    S
+                </div>
+                <div class="absolute -inset-3 rounded-full border-2 border-dashed border-pink-300 animate-spin" style="animation-duration: 8s;"></div>
+            </div>
+
+            <!-- Textos de Carga -->
+            <div class="space-y-2" id="loading-text-container">
+                <h3 class="text-xl font-bold text-gray-900">Cargando Tablero Suburbia</h3>
+                <p id="loading-status-text" class="text-xs text-gray-500 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-spinner fa-spin text-suburbia-pink"></i> Conectando con Google Sheets...
+                </p>
+            </div>
+
+            <!-- Indicador de Error / Reintento -->
+            <div id="loading-error-box" class="hidden space-y-4 w-full bg-red-50 border border-red-200 rounded-xl p-4">
+                <div class="flex items-center justify-center space-x-2 text-red-600 font-semibold text-sm">
+                    <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                    <span>No se pudieron obtener los datos</span>
+                </div>
+                <p id="loading-error-detail" class="text-xs text-gray-600 text-center">
+                    Asegúrate de que la hoja de cálculo contiene la pestaña "Ventas_Especiales_Acumulado" e intenta nuevamente.
+                </p>
+                <button onclick="retryFetchData()" class="w-full py-2.5 px-4 bg-suburbia-pink hover:bg-pink-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Reintentar Conexión
+                </button>
+            </div>
+
+            <!-- Progress Bar Indeterminado -->
+            <div id="loading-progress-bar" class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-suburbia-pink h-full w-1/3 rounded-full animate-pulse transition-all duration-500"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP HEADER / MAIN TAB NAVIGATION -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-[1700px] mx-auto px-4 flex justify-center space-x-12">
+            <button id="main-tab-colocacion" onclick="switchMainTab('colocacion')" class="py-3.5 px-6 font-semibold text-sm border-b-2 border-suburbia-pink text-suburbia-pink transition-colors duration-200 flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-xs"></i> Colocación
+            </button>
+            <button id="main-tab-perfil" onclick="switchMainTab('perfil')" class="py-3.5 px-6 font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition-colors duration-200 flex items-center gap-2">
+                <i class="fa-regular fa-user text-xs"></i> Perfil
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-[1700px] w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- TAB CONTENT: COLOCACIÓN -->
+        <div id="content-colocacion" class="space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+                
+                <!-- HEADER BRANDING -->
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 pb-5">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-suburbia-pink flex items-center justify-center text-white font-bold text-2xl shadow-sm">S</div>
+                        <span class="text-3xl font-extrabold tracking-tight text-gray-900">
+                            Suburbıa<span class="text-xs align-super text-gray-400">®</span>
+                        </span>
+                    </div>
+
+                    <div class="text-center">
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Ventas Especiales</h1>
+                        <span id="header-status-badge" class="text-xs text-emerald-600 font-medium inline-flex items-center justify-center gap-1.5 mt-1 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Datos Sincronizados
+                        </span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <div class="relative w-28 h-14 flex items-center justify-center">
+                            <div class="absolute transform -rotate-12 -translate-x-4 w-12 h-16 bg-pink-700 rounded-lg shadow-md border border-white flex flex-col justify-between p-1">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-60"></div>
+                                <span class="text-[8px] text-white font-bold">S</span>
+                            </div>
+                            <div class="absolute transform z-10 w-12 h-16 bg-gray-900 rounded-lg shadow-lg border border-gray-700 flex flex-col justify-between p-1">
+                                <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                                <span class="text-[8px] text-white font-bold text-right">VISA</span>
+                            </div>
+                            <div class="absolute transform rotate-12 translate-x-4 w-12 h-16 bg-emerald-600 rounded-lg shadow-md border border-white flex flex-col justify-between p-1">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-60"></div>
+                                <span class="text-[8px] text-white font-bold">S</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TABS NAV -->
+                <div class="flex border-b border-gray-200 space-x-2 bg-gray-50/60 p-1.5 rounded-lg border">
+                    <button id="subtab-btn-mensual" onclick="switchSubTab('mensual')" class="flex-1 py-2 px-4 rounded-md text-xs font-semibold shadow-xs bg-white text-suburbia-pink border border-gray-200 transition-all">
+                        <i class="fa-regular fa-calendar-days mr-1.5"></i> Vista Mensual / Campañas
+                    </button>
+                    <button id="subtab-btn-trimestral" onclick="switchSubTab('trimestral')" class="flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all">
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i> Vista Trimestral
+                    </button>
+                    <button id="subtab-btn-anual" onclick="switchSubTab('anual')" class="flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all">
+                        <i class="fa-solid fa-layer-group mr-1.5"></i> Resumen Tipo de Venta
+                    </button>
+                </div>
+
+                <!-- SUB-TAB 1: VISTA MENSUAL -->
+                <div id="subtab-view-mensual" class="space-y-4">
+                    <div class="space-y-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
+                        <div class="flex flex-wrap justify-center gap-4">
+                            <div class="w-full sm:w-52">
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Mes</label>
+                                <select id="m-filter-mes" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 shadow-sm focus:ring-2 focus:ring-suburbia-pink focus:outline-none">
+                                    <option value="ALL">Todos los Meses</option>
+                                    <option value="Ene">Enero</option>
+                                    <option value="Feb">Febrero</option>
+                                    <option value="Abr">Abril</option>
+                                    <option value="May">Mayo</option>
+                                    <option value="Jun">Junio</option>
+                                    <option value="Ago">Agosto</option>
+                                    <option value="Oct">Octubre</option>
+                                    <option value="Nov">Noviembre</option>
+                                    <option value="Dic">Diciembre</option>
+                                </select>
+                            </div>
+                            <div class="w-full sm:w-52">
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Venta / Temp</label>
+                                <select id="m-filter-venta" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 shadow-sm focus:ring-2 focus:ring-suburbia-pink focus:outline-none">
+                                    <option value="ALL">Todas las Ventas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3 pt-2 max-w-2xl mx-auto">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
+                                <select id="m-filter-producto" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                    <option value="ALL">Todos</option>
+                                    <option value="Tarjeta Suburbia">Tarjeta Suburbia</option>
+                                    <option value="Visa Suburbia">Visa Suburbia</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Segmento</label>
+                                <select id="m-filter-segmento" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                    <option value="ALL">Todos</option>
+                                    <option value="Hit">Hit</option>
+                                    <option value="No Hit">No Hit</option>
+                                    <option value="Thin File">Thin File</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
+                                <select id="m-filter-anio" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                    <option value="ALL">Todos los Años</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
+                        <div class="overflow-x-auto table-scroll max-h-[550px]">
+                            <table class="w-full text-xs text-left border-collapse" id="table-mensual"></table>
+                        </div>
+                    </div>
+
+                    <!-- GRÁFICOS PARALELOS -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- GRÁFICO 1 -->
+                        <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                                <div>
+                                    <h2 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-column text-suburbia-pink"></i> Comparativo por Año
+                                    </h2>
+                                    <p class="text-xs text-gray-500 mt-0.5">Desempeño YoY por campaña específica</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
+                                        <label for="chart-filter-tipoVenta" class="text-[10px] font-semibold text-gray-500 whitespace-nowrap">Campaña:</label>
+                                        <select id="chart-filter-tipoVenta" onchange="renderMonthlyChart()" class="bg-white border border-gray-300 rounded-md text-[11px] font-medium text-gray-700 py-0.5 px-1.5 focus:ring-1 focus:ring-suburbia-pink focus:outline-none"></select>
+                                    </div>
+                                    <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+                                        <button id="btn-chart-metric-solicitudes" onclick="setChartMetric('solicitudes')" class="px-2 py-1 text-[11px] font-semibold rounded-md transition-all shadow-xs bg-white text-suburbia-pink border border-gray-200">Soli.</button>
+                                        <button id="btn-chart-metric-cuentas" onclick="setChartMetric('cuentas')" class="px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-gray-900 rounded-md transition-all">Cuentas</button>
+                                        <button id="btn-chart-metric-pctAprobacion" onclick="setChartMetric('pctAprobacion')" class="px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-gray-900 rounded-md transition-all">% Aprob</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="relative w-full h-60">
+                                <canvas id="monthlyComparisonChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- GRÁFICO 2 -->
+                        <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                                <div>
+                                    <h2 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-pie text-suburbia-pink"></i> Distribución de <span id="label-stacked-metric" class="text-suburbia-pink">Solicitudes</span>
+                                    </h2>
+                                    <p class="text-xs text-gray-500 mt-0.5">% BAU vs Ventas Especiales por mes de campaña</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+                                        <button id="btn-stacked-metric-solicitudes" onclick="setStackedMetric('solicitudes')" class="px-2 py-1 text-[11px] font-semibold rounded-md transition-all shadow-xs bg-white text-suburbia-pink border border-gray-200">Soli.</button>
+                                        <button id="btn-stacked-metric-cuentas" onclick="setStackedMetric('cuentas')" class="px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-gray-900 rounded-md transition-all">Cuentas</button>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-gray-600 bg-gray-50 px-2 py-1 rounded-md border border-gray-200">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-slate-700 inline-block"></span> BAU
+                                        <span class="w-2.5 h-2.5 rounded-full bg-suburbia-pink inline-block ml-1"></span> Especiales
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="relative w-full h-60">
+                                <canvas id="distributionStackedChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 2: VISTA TRIMESTRAL -->
+                <div id="subtab-view-trimestral" class="space-y-4 hidden">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-4xl mx-auto">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
+                            <select id="t-filter-producto" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="Tarjeta Suburbia">Tarjeta Suburbia</option>
+                                <option value="Visa Suburbia">Visa Suburbia</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
+                            <select id="t-filter-anio" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Trimestre</label>
+                            <select id="t-filter-trimestre" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="T1">T1</option>
+                                <option value="T2">T2</option>
+                                <option value="T3">T3</option>
+                                <option value="T4">T4</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de venta</label>
+                            <select id="t-filter-tipoventa" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="BAU">BAU</option>
+                                <option value="Especial">Especial</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
+                        <div class="overflow-x-auto table-scroll max-h-[550px]">
+                            <table class="w-full text-xs text-left border-collapse" id="table-trimestral"></table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 3: VISTA ANUAL -->
+                <div id="subtab-view-anual" class="space-y-4 hidden">
+                    <div class="flex justify-center bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-md mx-auto">
+                        <div class="w-full">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de venta</label>
+                            <select id="a-filter-tipoventa" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="BAU">BAU</option>
+                                <option value="Especial">Especial</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
+                        <div class="overflow-x-auto table-scroll max-h-[550px]">
+                            <table class="w-full text-xs text-left border-collapse" id="table-anual"></table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB CONTENT: PERFIL -->
+        <div id="content-perfil" class="hidden space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 pb-5">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-suburbia-pink flex items-center justify-center text-white font-bold text-2xl shadow-sm">S</div>
+                        <span class="text-3xl font-extrabold tracking-tight text-gray-900">
+                            Suburbıa<span class="text-xs align-super text-gray-400">®</span>
+                        </span>
+                    </div>
+                    <div class="text-center">
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Perfil de Clientes - Ventas Especiales</h1>
+                    </div>
+                    <div class="w-28"></div>
+                </div>
+
+                <div class="flex border-b border-gray-200 space-x-2 bg-gray-50/60 p-1.5 rounded-lg border">
+                    <button id="perfil-subtab-btn-mensual" onclick="switchPerfilSubTab('mensual')" class="flex-1 py-2 px-4 rounded-md text-xs font-semibold shadow-xs bg-white text-suburbia-pink border border-gray-200 transition-all">
+                        <i class="fa-regular fa-calendar-days mr-1.5"></i> Vista Mensual / Campañas
+                    </button>
+                    <button id="perfil-subtab-btn-trimestral" onclick="switchPerfilSubTab('trimestral')" class="flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all">
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i> Vista Trimestral
+                    </button>
+                </div>
+
+                <!-- PERFIL MENSUAL -->
+                <div id="perfil-subtab-view-mensual" class="space-y-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-2xl mx-auto">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
+                            <select id="pm-filter-producto" onchange="renderPerfilSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="Tarjeta Suburbia">Tarjeta Suburbia</option>
+                                <option value="Visa Suburbia">Visa Suburbia</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Segmento</label>
+                            <select id="pm-filter-segmento" onchange="renderPerfilSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                                <option value="Hit">Hit</option>
+                                <option value="No Hit">No Hit</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
+                            <select id="pm-filter-anio" onchange="renderPerfilSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos los Años</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
+                        <div class="overflow-x-auto table-scroll max-h-[550px]">
+                            <table class="w-full text-xs text-left border-collapse" id="table-perfil-mensual"></table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERFIL TRIMESTRAL -->
+                <div id="perfil-subtab-view-trimestral" class="space-y-4 hidden">
+                    <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
+                        <div class="overflow-x-auto table-scroll max-h-[550px]">
+                            <table class="w-full text-xs text-left border-collapse" id="table-perfil-trimestral"></table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-auto py-4 text-center text-xs text-gray-400 border-t border-gray-200 bg-white">
+        Suburbia © 2026 - Tablero de Control Conectado a Google Sheets
+    </footer>
+
+    <script>
+        let rawData = [];
+        let rawPerfilData = [];
+        let currentMainTab = 'colocacion';
+        let currentSubTab = 'mensual';
+        let currentPerfilSubTab = 'mensual';
+        let currentChartMetric = 'solicitudes';
+        let currentStackedMetric = 'solicitudes';
+        let monthlyChartInstance = null;
+        let stackedChartInstance = null;
+
+        const metricRows = [
+            { key: "solicitudes", label: "Solicitudes", format: "number" },
+            { key: "aprobadas", label: "Aprobadas", format: "number" },
+            { key: "pctAprobacion", label: "% Aprobación", format: "percent" },
+            { key: "cuentas", label: "Cuentas", format: "number" },
+            { key: "pctOtorgamiento", label: "% Otorgamiento", format: "percent" },
+            { key: "lineaPromedio", label: "Línea Promedio", format: "currency" },
+            { key: "diasVenta", label: "Días de venta", format: "nullNumber" },
+            { key: "noTiendas", label: "No. Tiendas", format: "number" }
+        ];
+
+        const perfilMetricRows = [
+            { key: "pctNoHit", label: "% NoHit", format: "percent" },
+            { key: "pctHighVeryHigh", label: "% High & VeryHigh", format: "percent" },
+            { key: "scoreProm", label: "Score Prom", format: "decimal" },
+            { key: "edadProm", label: "Edad Prom", format: "integer" },
+            { key: "pctFemenino", label: "% Femenino", format: "percent" },
+            { key: "pctLicenciatura", label: "% Licenciatura & Posgrado", format: "percent" },
+            { key: "ingresoProm", label: "Ingreso Prom", format: "currency" },
+            { key: "ptiProm", label: "PTI Prom", format: "percent" },
+            { key: "btiProm", label: "BTI Prom", format: "decimal" },
+            { key: "ltiProm", label: "LTI Prom", format: "decimal" },
+            { key: "lcOnUsProm", label: "LC OnUs Prom", format: "currency" },
+            { key: "lcOffUsProm", label: "LC OffUs Prom", format: "currency" },
+            { key: "consultasUlt3M", label: "Consultas Ult 3M", format: "decimal" },
+            { key: "consultasUlt6M", label: "Consultas Ult 6M", format: "decimal" },
+            { key: "tarjetasOffUs", label: "Tarjetas OffUs", format: "decimal" },
+            { key: "utilizacionProm", label: "Utilización Prom", format: "percent" }
+        ];
+
+        window.onload = function() {
+            fetchDataFromBackend();
+        };
+
+        function showLoading() {
+            const loadingScreen = document.getElementById('loading-screen');
+            const errorBox = document.getElementById('loading-error-box');
+            const textContainer = document.getElementById('loading-text-container');
+            const progressBar = document.getElementById('loading-progress-bar');
+
+            if (loadingScreen) loadingScreen.classList.remove('hidden');
+            if (errorBox) errorBox.classList.add('hidden');
+            if (textContainer) textContainer.classList.remove('hidden');
+            if (progressBar) progressBar.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    loadingScreen.classList.remove('opacity-0');
+                }, 300);
+            }
+        }
+
+        function showErrorInLoading(errorMsg) {
+            const errorBox = document.getElementById('loading-error-box');
+            const errorDetail = document.getElementById('loading-error-detail');
+            const textContainer = document.getElementById('loading-text-container');
+            const progressBar = document.getElementById('loading-progress-bar');
+
+            if (errorDetail) errorDetail.textContent = errorMsg || 'Ocurrió un error al intentar conectarse a la hoja de datos.';
+            if (errorBox) errorBox.classList.remove('hidden');
+            if (textContainer) textContainer.classList.add('hidden');
+            if (progressBar) progressBar.classList.add('hidden');
+        }
+
+        function retryFetchData() {
+            showLoading();
+            fetchDataFromBackend();
+        }
+
+        function fetchDataFromBackend() {
+            showLoading();
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(onDataLoaded)
+                    .withFailureHandler(onDataError)
+                    .getDataFromSheet(); 
+            } else {
+                // Simulación para entorno local/desarrollo
+                setTimeout(() => {
+                    onDataLoaded({
+                        colocacion: generateMockData(),
+                        perfil: generateMockPerfilData()
+                    });
+                }, 800);
+            }
+        }
+
+        function onDataLoaded(response) {
+            if (response && response.colocacion) {
+                rawData = response.colocacion;
+                rawPerfilData = response.perfil || [];
+            } else {
+                rawData = response || [];
+                rawPerfilData = [];
+            }
+
+            hideLoading();
+            populateDynamicFilters();
+            
+            if (currentMainTab === 'colocacion') {
+                renderCurrentSubTab();
+            } else {
+                renderPerfilSubTab();
+            }
+        }
+
+        function onDataError(err) {
+            console.error('Error al conectar con Google Apps Script:', err);
+            const msg = (err && err.message) ? err.message : 'Error de comunicación con Google Apps Script.';
+            showErrorInLoading(msg);
+        }
+
+        function populateDynamicFilters() {
+            const selectVenta = document.getElementById('m-filter-venta');
+            const selectChart = document.getElementById('chart-filter-tipoVenta');
+            
+            if (!rawData || rawData.length === 0) return;
+
+            const campaigns = [...new Set(rawData.map(d => d.venta))].filter(Boolean).sort();
+            
+            if (selectVenta) {
+                selectVenta.innerHTML = '<option value="ALL">Todas las Ventas</option>' + 
+                    campaigns.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+            if (selectChart) {
+                selectChart.innerHTML = campaigns.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+        }
+
+        function generateMockData() {
+            return [
+                { anio: "2026", venta: "BAU Dec24", tipoVenta: "BAU", trimestre: "T1", mes: "Ene", producto: "Tarjeta Suburbia", cliente: "Cliente", segmento: "Hit", solicitudes: 150937, aprobadas: 57120, pctAprobacion: 0.378, cuentas: 57120, pctOtorgamiento: 0.378, lineaPromedio: 12500, diasVenta: null, noTiendas: 196 },
+                { anio: "2026", venta: "VentaMamas 26", tipoVenta: "Especial", trimestre: "T2", mes: "May", producto: "Tarjeta Suburbia", cliente: "Cliente", segmento: "Hit", solicitudes: 13164, aprobadas: 5992, pctAprobacion: 0.455, cuentas: 5992, pctOtorgamiento: 0.455, lineaPromedio: 14800, diasVenta: 4, noTiendas: 196 },
+                { anio: "2026", venta: "HotSale 26", tipoVenta: "Especial", trimestre: "T2", mes: "May", producto: "Tarjeta Suburbia", cliente: "Cliente", segmento: "Hit", solicitudes: 18258, aprobadas: 7496, pctAprobacion: 0.410, cuentas: 7496, pctOtorgamiento: 0.410, lineaPromedio: 15200, diasVenta: 4, noTiendas: 196 }
+            ];
+        }
+
+        function generateMockPerfilData() {
+            return [
+                { anio: "2026", venta: "BAU Dec24", tipoVenta: "BAU", trimestre: "T1", mes: "Ene", producto: "Tarjeta Suburbia", segmento: "Hit", pctNoHit: 0.178, pctHighVeryHigh: 0.210, scoreProm: 255.40, edadProm: 43, pctFemenino: 0.650, pctLicenciatura: 0.440, ingresoProm: 19800, ptiProm: 0.155, btiProm: 1.62, ltiProm: 4.80, lcOnUsProm: 15500, lcOffUsProm: 23400, consultasUlt3M: 0.90, consultasUlt6M: 1.60, tarjetasOffUs: 2.30, utilizacionProm: 0.245 }
+            ];
+        }
+
+        function renderCurrentSubTab() {
+            if (currentSubTab === 'mensual') {
+                renderMensualTable();
+                renderMonthlyChart();
+                renderDistributionStackedChart();
+            } else if (currentSubTab === 'trimestral') {
+                renderTrimestralTable();
+            } else if (currentSubTab === 'anual') {
+                renderAnualTable();
+            }
+        }
+
+        function renderPerfilSubTab() {
+            if (currentPerfilSubTab === 'mensual') {
+                renderPerfilMensualTable();
+            } else if (currentPerfilSubTab === 'trimestral') {
+                renderPerfilTrimestralTable();
+            }
+        }
+
+        function setChartMetric(metric) {
+            currentChartMetric = metric;
+            ['solicitudes', 'cuentas', 'pctAprobacion'].forEach(m => {
+                const btn = document.getElementById(`btn-chart-metric-${m}`);
+                if (btn) btn.className = m === metric ? "px-2 py-1 text-[11px] font-semibold rounded-md transition-all shadow-xs bg-white text-suburbia-pink border border-gray-200" : "px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-gray-900 transition-all";
+            });
+            renderMonthlyChart();
+        }
+
+        function setStackedMetric(metric) {
+            currentStackedMetric = metric;
+            ['solicitudes', 'cuentas'].forEach(m => {
+                const btn = document.getElementById(`btn-stacked-metric-${m}`);
+                if (btn) btn.className = m === metric ? "px-2 py-1 text-[11px] font-semibold rounded-md transition-all shadow-xs bg-white text-suburbia-pink border border-gray-200" : "px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-gray-900 transition-all";
+            });
+            const labelEl = document.getElementById('label-stacked-metric');
+            if (labelEl) labelEl.textContent = metric === 'solicitudes' ? 'Solicitudes' : 'Cuentas';
+            renderDistributionStackedChart();
+        }
+
+        function renderMensualTable() {
+            const mes = document.getElementById('m-filter-mes').value;
+            const venta = document.getElementById('m-filter-venta').value;
+            const prod = document.getElementById('m-filter-producto').value;
+            const seg = document.getElementById('m-filter-segmento').value;
+            const anioFilter = document.getElementById('m-filter-anio')?.value || 'ALL';
+
+            let filtered = rawData.filter(d => {
+                if (mes !== 'ALL' && d.mes !== mes) return false;
+                if (venta !== 'ALL' && d.venta !== venta) return false;
+                if (prod !== 'ALL' && d.producto !== prod) return false;
+                if (seg !== 'ALL' && !d.segmento.toLowerCase().includes(seg.toLowerCase())) return false;
+                if (anioFilter !== 'ALL' && d.anio !== anioFilter) return false;
+                return true;
+            });
+
+            let headerHtml = `
+                <thead>
+                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
+                        <th class="p-3 w-44 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Año <i class="fa-solid fa-caret-down text-[10px] ml-1"></i></th>
+                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-normal text-gray-600">${col.anio}</th>`).join('')}
+                    </tr>
+                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
+                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Venta</th>
+                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-medium text-gray-800">${col.venta}</th>`).join('')}
+                    </tr>
+                </thead>
+            `;
+
+            let bodyHtml = buildMatrixBody(filtered, metricRows);
+            document.getElementById('table-mensual').innerHTML = headerHtml + bodyHtml;
+        }
+
+        function renderPerfilMensualTable() {
+            const prod = document.getElementById('pm-filter-producto').value;
+            const seg = document.getElementById('pm-filter-segmento').value;
+            const anioFilter = document.getElementById('pm-filter-anio').value;
+
+            let filtered = rawPerfilData.filter(d => {
+                if (prod !== 'ALL' && d.producto !== prod) return false;
+                if (seg !== 'ALL' && !d.segmento.toLowerCase().includes(seg.toLowerCase())) return false;
+                if (anioFilter !== 'ALL' && d.anio !== anioFilter) return false;
+                return true;
+            });
+
+            let headerHtml = `
+                <thead>
+                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
+                        <th class="p-3 w-48 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Año <i class="fa-solid fa-caret-down text-[10px] ml-1"></i></th>
+                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-normal text-gray-600">${col.anio}</th>`).join('')}
+                    </tr>
+                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
+                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Venta</th>
+                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-medium text-gray-800">${col.venta}</th>`).join('')}
+                    </tr>
+                </thead>
+            `;
+
+            let bodyHtml = buildMatrixBody(filtered, perfilMetricRows);
+            document.getElementById('table-perfil-mensual').innerHTML = headerHtml + bodyHtml;
+        }
+
+        function renderPerfilTrimestralTable() {
+            let headerHtml = `<thead><tr class="bg-indigo-50"><th class="p-3">Métrica</th><th class="p-3 text-center">T1</th><th class="p-3 text-center">T2</th><th class="p-3 text-center">T3</th><th class="p-3 text-center">T4</th></tr></thead>`;
+            let bodyHtml = buildMatrixBody(rawPerfilData.slice(0, 4), perfilMetricRows);
+            document.getElementById('table-perfil-trimestral').innerHTML = headerHtml + bodyHtml;
+        }
+
+        function renderMonthlyChart() {
+            const ctx = document.getElementById('monthlyComparisonChart');
+            if (!ctx) return;
+
+            const selectedCampaign = document.getElementById('chart-filter-tipoVenta')?.value || '';
+            const filteredForChart = rawData.filter(d => !selectedCampaign || d.venta === selectedCampaign);
+            const years = [...new Set(rawData.map(d => d.anio))].filter(Boolean).sort();
+
+            const metricValues = years.map(year => {
+                const items = filteredForChart.filter(d => d.anio === year);
+                if (items.length === 0) return 0;
+
+                if (currentChartMetric === 'pctAprobacion') {
+                    const totalSoli = items.reduce((acc, curr) => acc + (curr.solicitudes || 0), 0);
+                    const totalAprob = items.reduce((acc, curr) => acc + (curr.aprobadas || 0), 0);
+                    return totalSoli > 0 ? (totalAprob / totalSoli) * 100 : 0;
+                } else {
+                    return items.reduce((acc, curr) => acc + (curr[currentChartMetric] || 0), 0);
+                }
+            });
+
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+
+            monthlyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: `${selectedCampaign || 'Venta'}`,
+                        data: metricValues,
+                        backgroundColor: years.map((_, idx) => idx % 2 === 0 ? '#94a3b8' : '#d81b60'),
+                        borderRadius: 6,
+                        barPercentage: 0.45
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: 'top' } },
+                    scales: { y: { border: { dash: [4, 4] }, grid: { color: '#f1f5f9' } } }
+                }
+            });
+        }
+
+        function renderDistributionStackedChart() {
+            const ctx = document.getElementById('distributionStackedChart');
+            if (!ctx) return;
+
+            const years = [...new Set(rawData.map(d => d.anio))].filter(Boolean).sort();
+            const bauPercentages = [];
+            const especialPercentages = [];
+
+            years.forEach(yr => {
+                const itemsInYear = rawData.filter(d => d.anio === yr);
+                const bauVal = itemsInYear.filter(d => d.tipoVenta === 'BAU').reduce((s, d) => s + (d[currentStackedMetric] || 0), 0);
+                const espVal = itemsInYear.filter(d => d.tipoVenta === 'Especial').reduce((s, d) => s + (d[currentStackedMetric] || 0), 0);
+                const tot = bauVal + espVal;
+
+                if (tot > 0) {
+                    bauPercentages.push(((bauVal / tot) * 100).toFixed(1));
+                    especialPercentages.push(((espVal / tot) * 100).toFixed(1));
+                } else {
+                    bauPercentages.push(0);
+                    especialPercentages.push(0);
+                }
+            });
+
+            if (stackedChartInstance) stackedChartInstance.destroy();
+
+            stackedChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [
+                        { label: 'BAU (%)', data: bauPercentages, backgroundColor: '#334155' },
+                        { label: 'Ventas Especiales (%)', data: especialPercentages, backgroundColor: '#d81b60' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true, max: 100 } }
+                }
+            });
+        }
+
+        function renderTrimestralTable() {
+            const anio = document.getElementById('t-filter-anio').value;
+            const trim = document.getElementById('t-filter-trimestre').value;
+            const tipoVenta = document.getElementById('t-filter-tipoventa').value;
+
+            let filtered = rawData.filter(col => {
+                if (anio !== 'ALL' && col.anio !== anio) return false;
+                if (trim !== 'ALL' && col.trimestre !== trim) return false;
+                if (tipoVenta !== 'ALL' && col.tipoVenta !== tipoVenta) return false;
+                return true;
+            });
+
+            let headerHtml = `
+                <thead>
+                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
+                        <th class="p-3 w-44 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Año</th>
+                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[110px] border-r border-gray-200 font-normal text-gray-600">${col.anio}</th>`).join('')}
+                    </tr>
+                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
+                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Tipo de Venta</th>
+                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[110px] border-r border-gray-200 font-medium text-gray-800">${col.tipoVenta}</th>`).join('')}
+                    </tr>
+                </thead>
+            `;
+
+            let bodyHtml = buildMatrixBody(filtered, metricRows);
+            document.getElementById('table-trimestral').innerHTML = headerHtml + bodyHtml;
+        }
+
+        function renderAnualTable() {
+            const tipoVenta = document.getElementById('a-filter-tipoventa').value;
+
+            let filtered = rawData.filter(col => {
+                if (tipoVenta !== 'ALL' && col.tipoVenta !== tipoVenta) return false;
+                return true;
+            });
+
+            let headerHtml = `
+                <thead>
+                    <tr class="bg-indigo-50/60 text-gray-800 font-semibold border-b border-gray-200">
+                        <th class="p-3 w-48 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Tipo de Venta</th>
+                        ${filtered.map(col => `<th class="p-3 text-center min-w-[180px] border-r border-gray-200 font-medium text-gray-800">${col.venta} (${col.anio})</th>`).join('')}
+                    </tr>
+                </thead>
+            `;
+
+            let bodyHtml = buildMatrixBody(filtered, metricRows);
+            document.getElementById('table-anual').innerHTML = headerHtml + bodyHtml;
+        }
+
+        function buildMatrixBody(dataList, metrics) {
+            if (!dataList || dataList.length === 0) {
+                return `<tbody><tr><td class="p-8 text-center text-gray-500">No se encontraron registros con los filtros seleccionados.</td></tr></tbody>`;
+            }
+
+            let bodyHtml = '<tbody>';
+            metrics.forEach((metric, index) => {
+                const bgClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/40';
+                bodyHtml += `<tr class="${bgClass} hover:bg-pink-50/30 transition-colors border-b border-gray-100">`;
+                bodyHtml += `<td class="p-3 font-semibold text-gray-800 sticky left-0 border-r border-gray-200 z-10 ${bgClass}">${metric.label}</td>`;
+
+                dataList.forEach(col => {
+                    const rawVal = col[metric.key];
+                    const formattedVal = formatMetricValue(rawVal, metric.format);
+                    bodyHtml += `<td class="p-2.5 text-right font-medium text-gray-700 border-r border-gray-100">${formattedVal}</td>`;
+                });
+
+                bodyHtml += '</tr>';
+            });
+            bodyHtml += '</tbody>';
+            return bodyHtml;
+        }
+
+        function formatMetricValue(val, format) {
+            if (val === null || val === undefined) return '<span class="text-gray-400 font-normal">-</span>';
+
+            switch(format) {
+                case 'number':
+                    return new Intl.NumberFormat('es-MX').format(val);
+                case 'percent':
+                    return (val * 100).toFixed(1) + '%';
+                case 'currency':
+                    return '$' + new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 }).format(val);
+                case 'decimal':
+                    return Number(val).toFixed(2);
+                case 'integer':
+                    return Math.round(val);
+                case 'nullNumber':
+                    return val;
+                default:
+                    return val;
+            }
+        }
+
+        function switchSubTab(target) {
+            currentSubTab = target;
+            document.getElementById('subtab-view-mensual').classList.toggle('hidden', target !== 'mensual');
+            document.getElementById('subtab-view-trimestral').classList.toggle('hidden', target !== 'trimestral');
+            document.getElementById('subtab-view-anual').classList.toggle('hidden', target !== 'anual');
+
+            ['mensual', 'trimestral', 'anual'].forEach(t => {
+                const btn = document.getElementById(`subtab-btn-${t}`);
+                if (btn) btn.className = t === target ? "flex-1 py-2 px-4 rounded-md text-xs font-semibold shadow-xs bg-white text-suburbia-pink border border-gray-200 transition-all" : "flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all";
+            });
+
+            renderCurrentSubTab();
+        }
+
+        function switchPerfilSubTab(target) {
+            currentPerfilSubTab = target;
+            document.getElementById('perfil-subtab-view-mensual').classList.toggle('hidden', target !== 'mensual');
+            document.getElementById('perfil-subtab-view-trimestral').classList.toggle('hidden', target !== 'trimestral');
+
+            ['mensual', 'trimestral'].forEach(t => {
+                const btn = document.getElementById(`perfil-subtab-btn-${t}`);
+                if (btn) btn.className = t === target ? "flex-1 py-2 px-4 rounded-md text-xs font-semibold shadow-xs bg-white text-suburbia-pink border border-gray-200 transition-all" : "flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all";
+            });
+
+            renderPerfilSubTab();
+        }
+
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+            document.getElementById('content-colocacion').classList.toggle('hidden', tab !== 'colocacion');
+            document.getElementById('content-perfil').classList.toggle('hidden', tab !== 'perfil');
+
+            const colocacionBtn = document.getElementById('main-tab-colocacion');
+            const perfilBtn = document.getElementById('main-tab-perfil');
+
+            if (tab === 'colocacion') {
+                colocacionBtn.className = "py-3.5 px-6 font-semibold text-sm border-b-2 border-suburbia-pink text-suburbia-pink transition-colors duration-200 flex items-center gap-2";
+                perfilBtn.className = "py-3.5 px-6 font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition-colors duration-200 flex items-center gap-2";
+                renderCurrentSubTab();
+            } else {
+                perfilBtn.className = "py-3.5 px-6 font-semibold text-sm border-b-2 border-suburbia-pink text-suburbia-pink transition-colors duration-200 flex items-center gap-2";
+                colocacionBtn.className = "py-3.5 px-6 font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition-colors duration-200 flex items-center gap-2";
+                renderPerfilSubTab();
+            }
+        }
+    </script>
+</body>
+</html>
