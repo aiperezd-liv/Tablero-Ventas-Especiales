@@ -774,12 +774,18 @@
             document.getElementById('table-perfil-trimestral').innerHTML = matrixHeader(cols, 'Año', 'Trimestre', 'w-48') + buildMatrixBody(cols, perfilMetricRows);
         }
 
+        // Las gráficas son INDEPENDIENTES de los filtros de la tabla (Mes, Venta, Producto, Segmento, Año):
+        // siempre usan todos los datos mensuales; solo dependen de su propio selector de campaña y métrica.
+        function chartBaseRows() {
+            return rawMensual;
+        }
+
         function renderMonthlyChart() {
             const ctx = document.getElementById('monthlyComparisonChart');
             if (!ctx) return;
 
             const selectedCampaign = document.getElementById('chart-filter-tipoVenta')?.value || '';
-            const filteredForChart = rawMensual.filter(d => !selectedCampaign || d.ventaBase === selectedCampaign);
+            const filteredForChart = chartBaseRows().filter(d => !selectedCampaign || d.ventaBase === selectedCampaign);
             const years = [...new Set(rawMensual.map(d => d.anio))].filter(Boolean).sort();
 
             const metricValues = years.map(year => {
@@ -827,7 +833,7 @@
             const especialPercentages = [];
 
             years.forEach(yr => {
-                const itemsInYear = rawMensual.filter(d => d.anio === yr);
+                const itemsInYear = chartBaseRows().filter(d => d.anio === yr);
                 const bauVal = itemsInYear.filter(d => d.tipoVenta === 'BAU').reduce((s, d) => s + (d[currentStackedMetric] || 0), 0);
                 const espVal = itemsInYear.filter(d => d.tipoVenta === 'Especial').reduce((s, d) => s + (d[currentStackedMetric] || 0), 0);
                 const tot = bauVal + espVal;
