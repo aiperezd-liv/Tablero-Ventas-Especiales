@@ -203,6 +203,7 @@
                             <table class="w-full text-xs text-left border-collapse" id="table-mensual"></table>
                         </div>
                     </div>
+                    <p id="control-mensual" class="text-[11px] text-gray-400 px-1"></p>
 
                     <!-- GRÁFICOS PARALELOS -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -307,8 +308,32 @@
 
                 <!-- SUB-TAB 3: VISTA ANUAL -->
                 <div id="subtab-view-anual" class="space-y-4 hidden">
-                    <div class="flex justify-center bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-md mx-auto">
-                        <div class="w-full">
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-5xl mx-auto">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
+                            <select id="a-filter-producto" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
+                            <select id="a-filter-anio" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Segmento</label>
+                            <select id="a-filter-segmento" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Trimestre</label>
+                            <select id="a-filter-trimestre" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
+                                <option value="ALL">Todos</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de venta</label>
                             <select id="a-filter-tipoventa" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
                                 <option value="ALL">Todos</option>
@@ -409,6 +434,9 @@
     <script>
         let rawData = [];
         let rawPerfilData = [];
+        let controlMensual = null;
+        let loadStart = Date.now(), loadMs = 0;
+        let rawMensual = [];   // hoja Ventas_Especiales (vista mensual: tabla y gráficos)
         let currentMainTab = 'colocacion';
         let currentSubTab = 'mensual';
         let currentPerfilSubTab = 'mensual';
@@ -493,6 +521,7 @@
 
         function fetchDataFromBackend() {
             showLoading();
+            loadStart = Date.now();
 
             if (typeof google !== 'undefined' && google.script && google.script.run) {
                 google.script.run
@@ -502,26 +531,27 @@
             } else {
                 // Simulación para entorno local/desarrollo
                 setTimeout(() => {
-                    onDataLoaded({
-                        colocacion: generateMockData(),
-                        perfil: generateMockPerfilData()
-                    });
+                    onDataLoaded({ rows: generateMockRows(), mensual: generateMockRows().map(r => Object.assign({}, r, { dias_venta_especial: 4 })) });
                 }, 800);
             }
         }
 
         function onDataLoaded(response) {
-            if (response && response.colocacion) {
-                rawData = response.colocacion;
-                rawPerfilData = response.perfil || [];
-            } else {
-                rawData = response || [];
-                rawPerfilData = [];
+            const rows = response && Array.isArray(response.rows) ? response.rows : [];
+            if (rows.length === 0) {
+                showErrorInLoading('La hoja no regresó filas. Revisa el nombre de la pestaña y que tenga datos.');
+                return;
             }
+            rawData = rows;          // filas crudas de la hoja (una por Año/Mes/Producto/Segmento/Venta)
+            rawPerfilData = rows;    // Perfil usa la misma hoja
+            loadMs = Date.now() - loadStart;
+            controlMensual = response.controlMensual || null;
+            rawMensual = (Array.isArray(response.mensual) ? response.mensual : []).map(d =>
+                Object.assign({}, d, { ventaBase: String(d.venta).replace(/\s*['-]?(\d{4}|\d{2})$/, '').trim() || d.venta }));
 
             hideLoading();
             populateDynamicFilters();
-            
+
             if (currentMainTab === 'colocacion') {
                 renderCurrentSubTab();
             } else {
@@ -535,36 +565,138 @@
             showErrorInLoading(msg);
         }
 
+        const MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+        function fillSelect(id, items, allLabel) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const prev = el.value;
+            el.innerHTML = (allLabel ? `<option value="ALL">${allLabel}</option>` : '') +
+                items.map(i => `<option value="${i.value}">${i.label}</option>`).join('');
+            if (prev && Array.from(el.options).some(o => o.value === prev)) el.value = prev;
+        }
+
+        function uniq(arr) { return Array.from(new Set(arr.filter(v => v !== '' && v != null))); }
+        function toItems(arr) { return arr.map(v => ({ value: v, label: v })); }
+
         function populateDynamicFilters() {
-            const selectVenta = document.getElementById('m-filter-venta');
-            const selectChart = document.getElementById('chart-filter-tipoVenta');
-            
             if (!rawData || rawData.length === 0) return;
+            const sorted = rawData.slice().sort((a, b) => (a.anio + String(a.mesNum).padStart(2, '0')).localeCompare(b.anio + String(b.mesNum).padStart(2, '0')));
 
-            const campaigns = [...new Set(rawData.map(d => d.venta))].filter(Boolean).sort();
-            
-            if (selectVenta) {
-                selectVenta.innerHTML = '<option value="ALL">Todas las Ventas</option>' + 
-                    campaigns.map(c => `<option value="${c}">${c}</option>`).join('');
-            }
-            if (selectChart) {
-                selectChart.innerHTML = campaigns.map(c => `<option value="${c}">${c}</option>`).join('');
-            }
+            const anios = toItems(uniq(sorted.map(d => d.anio)));
+            const productos = toItems(uniq(rawData.map(d => d.producto)).sort());
+            const segmentos = toItems(uniq(rawData.map(d => d.segmento)).sort());
+            const ventas = toItems(uniq(sorted.map(d => d.venta)));
+            const trims = toItems(uniq(rawData.map(d => d.trimestre)).sort());
+            const meses = uniq(rawData.map(d => d.mesNum)).sort((a, b) => a - b)
+                .map(n => ({ value: MESES_FULL[n - 1].slice(0, 3), label: MESES_FULL[n - 1] }));
+
+            // Vista mensual: opciones tomadas de la hoja Ventas_Especiales
+            const mSorted = rawMensual.slice().sort((a, b) => (a.anio + String(a.mesNum).padStart(2, '0')).localeCompare(b.anio + String(b.mesNum).padStart(2, '0')));
+            const mMeses = uniq(rawMensual.map(d => d.mesNum)).filter(n => n > 0).sort((a, b) => a - b)
+                .map(n => ({ value: MESES_FULL[n - 1].slice(0, 3), label: MESES_FULL[n - 1] }));
+            fillSelect('m-filter-mes', mMeses, 'Todos los Meses');
+            fillSelect('m-filter-venta', toItems(uniq(mSorted.map(d => d.venta))), 'Todas las Ventas');
+            fillSelect('m-filter-producto', toItems(uniq(rawMensual.map(d => d.producto)).sort()), 'Todos');
+            fillSelect('m-filter-segmento', toItems(uniq(rawMensual.map(d => d.segmento)).sort()), 'Todos');
+            fillSelect('m-filter-anio', toItems(uniq(mSorted.map(d => d.anio))), 'Todos los Años');
+            fillSelect('chart-filter-tipoVenta', toItems(uniq(mSorted.map(d => d.ventaBase))), null);
+            fillSelect('t-filter-producto', productos, 'Todos');
+            fillSelect('t-filter-anio', anios, 'Todos');
+            fillSelect('t-filter-trimestre', trims, 'Todos');
+            fillSelect('a-filter-producto', productos, 'Todos');
+            fillSelect('a-filter-anio', anios, 'Todos');
+            fillSelect('a-filter-segmento', segmentos, 'Todos');
+            fillSelect('a-filter-trimestre', trims, 'Todos');
+            fillSelect('pm-filter-producto', productos, 'Todos');
+            fillSelect('pm-filter-segmento', segmentos, 'Todos');
+            fillSelect('pm-filter-anio', anios, 'Todos los Años');
         }
 
-        function generateMockData() {
-            return [
-                { anio: "2026", venta: "BAU Dec24", tipoVenta: "BAU", trimestre: "T1", mes: "Ene", producto: "Tarjeta Suburbia", cliente: "Cliente", segmento: "Hit", solicitudes: 150937, aprobadas: 57120, pctAprobacion: 0.378, cuentas: 57120, pctOtorgamiento: 0.378, lineaPromedio: 12500, diasVenta: null, noTiendas: 196 },
-                { anio: "2026", venta: "VentaMamas 26", tipoVenta: "Especial", trimestre: "T2", mes: "May", producto: "Tarjeta Suburbia", cliente: "Cliente", segmento: "Hit", solicitudes: 13164, aprobadas: 5992, pctAprobacion: 0.455, cuentas: 5992, pctOtorgamiento: 0.455, lineaPromedio: 14800, diasVenta: 4, noTiendas: 196 },
-                { anio: "2026", venta: "HotSale 26", tipoVenta: "Especial", trimestre: "T2", mes: "May", producto: "Tarjeta Suburbia", cliente: "Cliente", segmento: "Hit", solicitudes: 18258, aprobadas: 7496, pctAprobacion: 0.410, cuentas: 7496, pctOtorgamiento: 0.410, lineaPromedio: 15200, diasVenta: 4, noTiendas: 196 }
-            ];
+        // ===== Datos de prueba (solo cuando se abre fuera de Apps Script) =====
+        function generateMockRows() {
+            const base = { solicitudes: 1000, cant_tiendas: 190, aprobadas: 400, cuentas: 380, cuentashit: 300, cuentasnhtf: 80,
+                sumhvh: 60, sumscore: 95000, sumedad: 16000, sumfemenino: 240, sumlicpos: 150, sumasalariados: 380, sumingreso: 7000000,
+                sum_pti: 60, sum_bti: 600, sum_iq_num_cons_3m: 380, sum_iq_num_cons_6m: 600, n_tarjetas: 850, sum_utilizacion: 90,
+                sum_linea_onus: 5000000, sum_linea_onus_hit: 4500000, sum_linea_offus: 7000000, sum_lti_total: 1900 };
+            const out = [];
+            [['2025', 5, 'May', 'T2', 'HotSale 25', 'Especial'], ['2026', 1, 'Ene', 'T1', 'BAU', 'BAU'], ['2026', 5, 'May', 'T2', 'HotSale 26', 'Especial']].forEach(c => {
+                ['Hit', 'No Hit'].forEach(seg => ['VISA', 'Departamental'].forEach(prod => {
+                    out.push(Object.assign({}, base, { anio: c[0], mesNum: c[1], mes: c[2], trimestre: c[3], venta: c[4], tipoVenta: c[5], producto: prod, segmento: seg }));
+                }));
+            });
+            return out;
         }
 
-        function generateMockPerfilData() {
-            return [
-                { anio: "2026", venta: "BAU Dec24", tipoVenta: "BAU", trimestre: "T1", mes: "Ene", producto: "Tarjeta Suburbia", segmento: "Hit", pctNoHit: 0.178, pctHighVeryHigh: 0.210, scoreProm: 255.40, edadProm: 43, pctFemenino: 0.650, pctLicenciatura: 0.440, ingresoProm: 19800, ptiProm: 0.155, btiProm: 1.62, ltiProm: 4.80, lcOnUsProm: 15500, lcOffUsProm: 23400, consultasUlt3M: 0.90, consultasUlt6M: 1.60, tarjetasOffUs: 2.30, utilizacionProm: 0.245 }
-            ];
+        // ===== Cálculo de métricas a partir de las sumas de la hoja =====
+        // Para cambiar una fórmula, edita solo esta función.
+        function computeMetrics(rs) {
+            const S = f => rs.reduce((a, r) => a + (Number(r[f]) || 0), 0);
+            const div = (n, d) => d > 0 ? n / d : null;
+            const soli = S('solicitudes'), aprob = S('aprobadas'), cuentas = S('cuentas'), hit = S('cuentashit');
+            // Cuentas de filas que sí traen información socioeconómica (SumAsalariados > 0)
+            const cuentasInfo = rs.reduce((a, r) => a + ((Number(r.sumasalariados) || 0) > 0 ? (Number(r.cuentas) || 0) : 0), 0);
+            return {
+                // Colocación
+                solicitudes: soli,
+                aprobadas: aprob,
+                pctAprobacion: div(aprob, soli),
+                cuentas: cuentas,
+                pctOtorgamiento: div(cuentas, soli),
+                lineaPromedio: div(S('sum_linea_onus'), cuentas),
+                diasVenta: (m => m > 0 ? m : null)(Math.max(0, ...rs.map(r => Number(r.dias_venta_especial) || 0))),
+                // Vista mensual: tiendas distintas (columna Tienda). Hoja acumulada: máximo de Cant_Tiendas
+                noTiendas: (n => n > 0 ? n : Math.max(0, ...rs.map(r => Number(r.cant_tiendas) || 0)))(
+                    new Set(rs.flatMap(r => r.tiendas ? String(r.tiendas).split(',') : [])).size),
+                // Perfil
+                pctNoHit: div(S('cuentasnhtf'), cuentas),
+                pctHighVeryHigh: div(S('sumhvh'), cuentas),
+                scoreProm: div(S('sumscore'), cuentas),
+                edadProm: div(S('sumedad'), cuentas),
+                pctFemenino: div(S('sumfemenino'), cuentas),
+                pctLicenciatura: div(S('sumlicpos'), cuentasInfo),
+                ingresoProm: div(S('sumingreso'), cuentas),
+                ptiProm: div(S('sum_pti'), cuentas),
+                btiProm: div(S('sum_bti'), cuentas),
+                ltiProm: div(S('sum_lti_total'), cuentas),
+                lcOnUsProm: div(S('sum_linea_onus_hit'), hit),
+                lcOffUsProm: div(S('sum_linea_offus'), hit),
+                consultasUlt3M: div(S('sum_iq_num_cons_3m'), cuentas),
+                consultasUlt6M: div(S('sum_iq_num_cons_6m'), cuentas),
+                tarjetasOffUs: div(S('n_tarjetas'), cuentas),
+                utilizacionProm: div(S('sum_utilizacion'), cuentas)
+            };
         }
+
+        // Agrupa filas crudas por una llave y calcula las métricas de cada grupo (cada grupo = una columna de la tabla)
+        function groupRows(rows, keyFn, labelFn) {
+            const sorted = rows.slice().sort((a, b) =>
+                (a.anio + String(a.mesNum).padStart(2, '0') + a.venta).localeCompare(b.anio + String(b.mesNum).padStart(2, '0') + b.venta));
+            const map = new Map();
+            sorted.forEach(r => {
+                const k = keyFn(r);
+                if (!map.has(k)) map.set(k, []);
+                map.get(k).push(r);
+            });
+            return Array.from(map.values()).map(rs => Object.assign({}, labelFn(rs[0]), computeMetrics(rs)));
+        }
+
+        function matrixHeader(cols, label1, label2, firstColWidth) {
+            const th = (txt, cls) => cols.map(c => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 ${cls}">${c[txt]}</th>`).join('');
+            return `
+                <thead>
+                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
+                        <th class="p-3 ${firstColWidth} sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">${label1}</th>
+                        ${th('l1', 'font-normal text-gray-600')}
+                    </tr>
+                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
+                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">${label2}</th>
+                        ${th('l2', 'font-medium text-gray-800')}
+                    </tr>
+                </thead>`;
+        }
+
+        function selVal(id) { return document.getElementById(id)?.value || 'ALL'; }
 
         function renderCurrentSubTab() {
             if (currentSubTab === 'mensual') {
@@ -607,71 +739,39 @@
         }
 
         function renderMensualTable() {
-            const mes = document.getElementById('m-filter-mes').value;
-            const venta = document.getElementById('m-filter-venta').value;
-            const prod = document.getElementById('m-filter-producto').value;
-            const seg = document.getElementById('m-filter-segmento').value;
-            const anioFilter = document.getElementById('m-filter-anio')?.value || 'ALL';
+            const mes = selVal('m-filter-mes'), venta = selVal('m-filter-venta'), prod = selVal('m-filter-producto'),
+                  seg = selVal('m-filter-segmento'), anio = selVal('m-filter-anio');
 
-            let filtered = rawData.filter(d => {
-                if (mes !== 'ALL' && d.mes !== mes) return false;
-                if (venta !== 'ALL' && d.venta !== venta) return false;
-                if (prod !== 'ALL' && d.producto !== prod) return false;
-                if (seg !== 'ALL' && !d.segmento.toLowerCase().includes(seg.toLowerCase())) return false;
-                if (anioFilter !== 'ALL' && d.anio !== anioFilter) return false;
-                return true;
-            });
+            const rows = rawMensual.filter(d =>
+                (mes === 'ALL' || d.mes === mes) && (venta === 'ALL' || d.venta === venta) &&
+                (prod === 'ALL' || d.producto === prod) && (seg === 'ALL' || d.segmento === seg) &&
+                (anio === 'ALL' || d.anio === anio));
 
-            let headerHtml = `
-                <thead>
-                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
-                        <th class="p-3 w-44 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Año <i class="fa-solid fa-caret-down text-[10px] ml-1"></i></th>
-                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-normal text-gray-600">${col.anio}</th>`).join('')}
-                    </tr>
-                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
-                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Venta</th>
-                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-medium text-gray-800">${col.venta}</th>`).join('')}
-                    </tr>
-                </thead>
-            `;
-
-            let bodyHtml = buildMatrixBody(filtered, metricRows);
-            document.getElementById('table-mensual').innerHTML = headerHtml + bodyHtml;
+            const cols = groupRows(rows, r => `${r.anio}|${r.mesNum}|${r.venta}`, r => ({ l1: `${r.anio || 's/año'} · ${r.mes || 's/mes'}`, l2: r.venta }));
+            const fmt = n => new Intl.NumberFormat('es-MX').format(n);
+            const sum = f => rows.reduce((a, r) => a + (Number(r[f]) || 0), 0);
+            const ctl = document.getElementById('control-mensual');
+            if (ctl) {
+                const c = controlMensual;
+                ctl.textContent = `Control (${controlMensual && controlMensual.fuente ? 'hoja ' + controlMensual.fuente : 'sin dato de fuente: back desactualizado'}) · Grupos filtrados: ${fmt(rows.length)} | Solicitudes: ${fmt(sum('solicitudes'))} | Cuentas: ${fmt(sum('cuentas'))}` +
+                    (c ? ` | Hoja completa: ${fmt(c.filasHoja)} filas, ${fmt(c.solicitudesHoja)} solicitudes, ${fmt(c.cuentasHoja)} cuentas | Sin año: ${c.sinAnio}, sin mes: ${c.sinMes}, celdas no numéricas: ${c.celdasNoNumericas} | Carga: ${(loadMs / 1000).toFixed(1)}s (back ${((c.ms || 0) / 1000).toFixed(1)}s)` : '');
+            }
+            document.getElementById('table-mensual').innerHTML = matrixHeader(cols, 'Año · Mes', 'Venta', 'w-44') + buildMatrixBody(cols, metricRows);
         }
 
         function renderPerfilMensualTable() {
-            const prod = document.getElementById('pm-filter-producto').value;
-            const seg = document.getElementById('pm-filter-segmento').value;
-            const anioFilter = document.getElementById('pm-filter-anio').value;
+            const prod = selVal('pm-filter-producto'), seg = selVal('pm-filter-segmento'), anio = selVal('pm-filter-anio');
 
-            let filtered = rawPerfilData.filter(d => {
-                if (prod !== 'ALL' && d.producto !== prod) return false;
-                if (seg !== 'ALL' && !d.segmento.toLowerCase().includes(seg.toLowerCase())) return false;
-                if (anioFilter !== 'ALL' && d.anio !== anioFilter) return false;
-                return true;
-            });
+            const rows = rawPerfilData.filter(d =>
+                (prod === 'ALL' || d.producto === prod) && (seg === 'ALL' || d.segmento === seg) && (anio === 'ALL' || d.anio === anio));
 
-            let headerHtml = `
-                <thead>
-                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
-                        <th class="p-3 w-48 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Año <i class="fa-solid fa-caret-down text-[10px] ml-1"></i></th>
-                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-normal text-gray-600">${col.anio}</th>`).join('')}
-                    </tr>
-                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
-                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Venta</th>
-                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[120px] border-r border-gray-200 font-medium text-gray-800">${col.venta}</th>`).join('')}
-                    </tr>
-                </thead>
-            `;
-
-            let bodyHtml = buildMatrixBody(filtered, perfilMetricRows);
-            document.getElementById('table-perfil-mensual').innerHTML = headerHtml + bodyHtml;
+            const cols = groupRows(rows, r => `${r.anio}|${r.mesNum}|${r.venta}`, r => ({ l1: `${r.anio} · ${r.mes}`, l2: r.venta }));
+            document.getElementById('table-perfil-mensual').innerHTML = matrixHeader(cols, 'Año · Mes', 'Venta', 'w-48') + buildMatrixBody(cols, perfilMetricRows);
         }
 
         function renderPerfilTrimestralTable() {
-            let headerHtml = `<thead><tr class="bg-indigo-50"><th class="p-3">Métrica</th><th class="p-3 text-center">T1</th><th class="p-3 text-center">T2</th><th class="p-3 text-center">T3</th><th class="p-3 text-center">T4</th></tr></thead>`;
-            let bodyHtml = buildMatrixBody(rawPerfilData.slice(0, 4), perfilMetricRows);
-            document.getElementById('table-perfil-trimestral').innerHTML = headerHtml + bodyHtml;
+            const cols = groupRows(rawPerfilData, r => `${r.anio}|${r.trimestre}`, r => ({ l1: r.anio, l2: r.trimestre }));
+            document.getElementById('table-perfil-trimestral').innerHTML = matrixHeader(cols, 'Año', 'Trimestre', 'w-48') + buildMatrixBody(cols, perfilMetricRows);
         }
 
         function renderMonthlyChart() {
@@ -679,8 +779,8 @@
             if (!ctx) return;
 
             const selectedCampaign = document.getElementById('chart-filter-tipoVenta')?.value || '';
-            const filteredForChart = rawData.filter(d => !selectedCampaign || d.venta === selectedCampaign);
-            const years = [...new Set(rawData.map(d => d.anio))].filter(Boolean).sort();
+            const filteredForChart = rawMensual.filter(d => !selectedCampaign || d.ventaBase === selectedCampaign);
+            const years = [...new Set(rawMensual.map(d => d.anio))].filter(Boolean).sort();
 
             const metricValues = years.map(year => {
                 const items = filteredForChart.filter(d => d.anio === year);
@@ -722,12 +822,12 @@
             const ctx = document.getElementById('distributionStackedChart');
             if (!ctx) return;
 
-            const years = [...new Set(rawData.map(d => d.anio))].filter(Boolean).sort();
+            const years = [...new Set(rawMensual.map(d => d.anio))].filter(Boolean).sort();
             const bauPercentages = [];
             const especialPercentages = [];
 
             years.forEach(yr => {
-                const itemsInYear = rawData.filter(d => d.anio === yr);
+                const itemsInYear = rawMensual.filter(d => d.anio === yr);
                 const bauVal = itemsInYear.filter(d => d.tipoVenta === 'BAU').reduce((s, d) => s + (d[currentStackedMetric] || 0), 0);
                 const espVal = itemsInYear.filter(d => d.tipoVenta === 'Especial').reduce((s, d) => s + (d[currentStackedMetric] || 0), 0);
                 const tot = bauVal + espVal;
@@ -761,53 +861,37 @@
         }
 
         function renderTrimestralTable() {
-            const anio = document.getElementById('t-filter-anio').value;
-            const trim = document.getElementById('t-filter-trimestre').value;
-            const tipoVenta = document.getElementById('t-filter-tipoventa').value;
+            const prod = selVal('t-filter-producto'), anio = selVal('t-filter-anio'), trim = selVal('t-filter-trimestre'), tipo = selVal('t-filter-tipoventa');
 
-            let filtered = rawData.filter(col => {
-                if (anio !== 'ALL' && col.anio !== anio) return false;
-                if (trim !== 'ALL' && col.trimestre !== trim) return false;
-                if (tipoVenta !== 'ALL' && col.tipoVenta !== tipoVenta) return false;
-                return true;
-            });
+            const rows = rawData.filter(d =>
+                (prod === 'ALL' || d.producto === prod) && (anio === 'ALL' || d.anio === anio) &&
+                (trim === 'ALL' || d.trimestre === trim) && (tipo === 'ALL' || d.tipoVenta === tipo));
 
-            let headerHtml = `
-                <thead>
-                    <tr class="bg-indigo-50/60 text-gray-700 font-semibold border-b border-gray-200">
-                        <th class="p-3 w-44 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Año</th>
-                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[110px] border-r border-gray-200 font-normal text-gray-600">${col.anio}</th>`).join('')}
-                    </tr>
-                    <tr class="bg-indigo-50/40 text-gray-800 font-semibold border-b border-gray-200">
-                        <th class="p-3 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Tipo de Venta</th>
-                        ${filtered.map(col => `<th class="p-2.5 text-center min-w-[110px] border-r border-gray-200 font-medium text-gray-800">${col.tipoVenta}</th>`).join('')}
-                    </tr>
-                </thead>
-            `;
-
-            let bodyHtml = buildMatrixBody(filtered, metricRows);
-            document.getElementById('table-trimestral').innerHTML = headerHtml + bodyHtml;
+            const cols = groupRows(rows, r => `${r.anio}|${r.trimestre}|${r.tipoVenta}`, r => ({ l1: r.anio, l2: `${r.trimestre} · ${r.tipoVenta}` }));
+            document.getElementById('table-trimestral').innerHTML = matrixHeader(cols, 'Año', 'Trimestre · Tipo', 'w-44') + buildMatrixBody(cols, metricRows);
         }
 
+        // Resumen: una columna por Tipo de venta (BAU / Especial) con todo lo que pasa los filtros
         function renderAnualTable() {
-            const tipoVenta = document.getElementById('a-filter-tipoventa').value;
+            const prod = selVal('a-filter-producto'), anio = selVal('a-filter-anio'), seg = selVal('a-filter-segmento'),
+                  trim = selVal('a-filter-trimestre'), tipo = selVal('a-filter-tipoventa');
 
-            let filtered = rawData.filter(col => {
-                if (tipoVenta !== 'ALL' && col.tipoVenta !== tipoVenta) return false;
-                return true;
-            });
+            const rows = rawData.filter(d =>
+                (prod === 'ALL' || d.producto === prod) && (anio === 'ALL' || d.anio === anio) &&
+                (seg === 'ALL' || d.segmento === seg) && (trim === 'ALL' || d.trimestre === trim) &&
+                (tipo === 'ALL' || d.tipoVenta === tipo));
 
-            let headerHtml = `
-                <thead>
-                    <tr class="bg-indigo-50/60 text-gray-800 font-semibold border-b border-gray-200">
-                        <th class="p-3 w-48 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Tipo de Venta</th>
-                        ${filtered.map(col => `<th class="p-3 text-center min-w-[180px] border-r border-gray-200 font-medium text-gray-800">${col.venta} (${col.anio})</th>`).join('')}
-                    </tr>
-                </thead>
-            `;
+            const order = { 'BAU': 0, 'Especial': 1 };
+            const cols = groupRows(rows, r => r.tipoVenta, r => ({ tipoVenta: r.tipoVenta }))
+                .sort((x, y) => order[x.tipoVenta] - order[y.tipoVenta]);
 
-            let bodyHtml = buildMatrixBody(filtered, metricRows);
-            document.getElementById('table-anual').innerHTML = headerHtml + bodyHtml;
+            const summaryMetrics = metricRows.filter(m => ['solicitudes', 'aprobadas', 'pctAprobacion', 'cuentas', 'pctOtorgamiento', 'lineaPromedio'].includes(m.key));
+
+            const header = `<thead><tr class="bg-indigo-50/60 text-gray-800 font-semibold border-b border-gray-200">
+                <th class="p-3 w-48 sticky left-0 bg-indigo-50 border-r border-gray-200 z-10">Tipo de venta</th>
+                ${cols.map(c => `<th class="p-3 text-center min-w-[180px] border-r border-gray-200 font-medium text-gray-800">${c.tipoVenta}</th>`).join('')}
+            </tr></thead>`;
+            document.getElementById('table-anual').innerHTML = header + buildMatrixBody(cols, summaryMetrics);
         }
 
         function buildMatrixBody(dataList, metrics) {
