@@ -147,53 +147,26 @@
                         <div class="flex flex-wrap justify-center gap-4">
                             <div class="w-full sm:w-52">
                                 <label class="block text-xs font-semibold text-gray-500 mb-1">Mes</label>
-                                <select id="m-filter-mes" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 shadow-sm focus:ring-2 focus:ring-suburbia-pink focus:outline-none">
-                                    <option value="ALL">Todos los Meses</option>
-                                    <option value="Ene">Enero</option>
-                                    <option value="Feb">Febrero</option>
-                                    <option value="Abr">Abril</option>
-                                    <option value="May">Mayo</option>
-                                    <option value="Jun">Junio</option>
-                                    <option value="Ago">Agosto</option>
-                                    <option value="Oct">Octubre</option>
-                                    <option value="Nov">Noviembre</option>
-                                    <option value="Dic">Diciembre</option>
-                                </select>
+                                <div id="m-filter-mes" class="ms-host" data-change="renderCurrentSubTab()"></div>
                             </div>
                             <div class="w-full sm:w-52">
                                 <label class="block text-xs font-semibold text-gray-500 mb-1">Venta / Temp</label>
-                                <select id="m-filter-venta" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-gray-700 shadow-sm focus:ring-2 focus:ring-suburbia-pink focus:outline-none">
-                                    <option value="ALL">Todas las Ventas</option>
-                                </select>
+                                <div id="m-filter-venta" class="ms-host" data-change="renderCurrentSubTab()"></div>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3 pt-2 max-w-2xl mx-auto">
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
-                                <select id="m-filter-producto" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                    <option value="ALL">Todos</option>
-                                    <option value="Tarjeta Suburbia">Tarjeta Suburbia</option>
-                                    <option value="Visa Suburbia">Visa Suburbia</option>
-                                </select>
+                                <div id="m-filter-producto" class="ms-host" data-change="renderCurrentSubTab()"></div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Segmento</label>
-                                <select id="m-filter-segmento" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                    <option value="ALL">Todos</option>
-                                    <option value="Hit">Hit</option>
-                                    <option value="No Hit">No Hit</option>
-                                    <option value="Thin File">Thin File</option>
-                                </select>
+                                <div id="m-filter-segmento" class="ms-host" data-change="renderCurrentSubTab()"></div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
-                                <select id="m-filter-anio" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                    <option value="ALL">Todos los Años</option>
-                                    <option value="2024">2024</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2026">2026</option>
-                                </select>
+                                <div id="m-filter-anio" class="ms-host" data-change="renderCurrentSubTab()"></div>
                             </div>
                         </div>
                     </div>
@@ -265,38 +238,19 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-4xl mx-auto">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
-                            <select id="t-filter-producto" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="Tarjeta Suburbia">Tarjeta Suburbia</option>
-                                <option value="Visa Suburbia">Visa Suburbia</option>
-                            </select>
+                            <div id="t-filter-producto" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
-                            <select id="t-filter-anio" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="2024">2024</option>
-                                <option value="2025">2025</option>
-                                <option value="2026">2026</option>
-                            </select>
+                            <div id="t-filter-anio" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Trimestre</label>
-                            <select id="t-filter-trimestre" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="T1">T1</option>
-                                <option value="T2">T2</option>
-                                <option value="T3">T3</option>
-                                <option value="T4">T4</option>
-                            </select>
+                            <div id="t-filter-trimestre" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de venta</label>
-                            <select id="t-filter-tipoventa" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="BAU">BAU</option>
-                                <option value="Especial">Especial</option>
-                            </select>
+                            <div id="t-filter-tipoventa" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                     </div>
                     <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
@@ -311,35 +265,23 @@
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-5xl mx-auto">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
-                            <select id="a-filter-producto" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                            </select>
+                            <div id="a-filter-producto" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
-                            <select id="a-filter-anio" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                            </select>
+                            <div id="a-filter-anio" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Segmento</label>
-                            <select id="a-filter-segmento" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                            </select>
+                            <div id="a-filter-segmento" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Trimestre</label>
-                            <select id="a-filter-trimestre" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                            </select>
+                            <div id="a-filter-trimestre" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de venta</label>
-                            <select id="a-filter-tipoventa" onchange="renderCurrentSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="BAU">BAU</option>
-                                <option value="Especial">Especial</option>
-                            </select>
+                            <div id="a-filter-tipoventa" class="ms-host" data-change="renderCurrentSubTab()"></div>
                         </div>
                     </div>
                     <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
@@ -368,42 +310,24 @@
                     <div class="w-28"></div>
                 </div>
 
-                <div class="flex border-b border-gray-200 space-x-2 bg-gray-50/60 p-1.5 rounded-lg border">
-                    <button id="perfil-subtab-btn-mensual" onclick="switchPerfilSubTab('mensual')" class="flex-1 py-2 px-4 rounded-md text-xs font-semibold shadow-xs bg-white text-suburbia-pink border border-gray-200 transition-all">
-                        <i class="fa-regular fa-calendar-days mr-1.5"></i> Vista Mensual / Campañas
-                    </button>
-                    <button id="perfil-subtab-btn-trimestral" onclick="switchPerfilSubTab('trimestral')" class="flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all">
-                        <i class="fa-solid fa-chart-pie mr-1.5"></i> Vista Trimestral
-                    </button>
-                </div>
-
                 <!-- PERFIL MENSUAL -->
                 <div id="perfil-subtab-view-mensual" class="space-y-4">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-2xl mx-auto">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50/80 p-4 rounded-xl border border-gray-100 max-w-3xl mx-auto">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Mes</label>
+                            <div id="pm-filter-mes" class="ms-host" data-change="renderPerfilSubTab()"></div>
+                        </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
-                            <select id="pm-filter-producto" onchange="renderPerfilSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="Tarjeta Suburbia">Tarjeta Suburbia</option>
-                                <option value="Visa Suburbia">Visa Suburbia</option>
-                            </select>
+                            <div id="pm-filter-producto" class="ms-host" data-change="renderPerfilSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Segmento</label>
-                            <select id="pm-filter-segmento" onchange="renderPerfilSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos</option>
-                                <option value="Hit">Hit</option>
-                                <option value="No Hit">No Hit</option>
-                            </select>
+                            <div id="pm-filter-segmento" class="ms-host" data-change="renderPerfilSubTab()"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Año</label>
-                            <select id="pm-filter-anio" onchange="renderPerfilSubTab()" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm">
-                                <option value="ALL">Todos los Años</option>
-                                <option value="2024">2024</option>
-                                <option value="2025">2025</option>
-                                <option value="2026">2026</option>
-                            </select>
+                            <div id="pm-filter-anio" class="ms-host" data-change="renderPerfilSubTab()"></div>
                         </div>
                     </div>
                     <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
@@ -413,14 +337,6 @@
                     </div>
                 </div>
 
-                <!-- PERFIL TRIMESTRAL -->
-                <div id="perfil-subtab-view-trimestral" class="space-y-4 hidden">
-                    <div class="rounded-lg border border-gray-200 overflow-hidden shadow-xs bg-white">
-                        <div class="overflow-x-auto table-scroll max-h-[550px]">
-                            <table class="w-full text-xs text-left border-collapse" id="table-perfil-trimestral"></table>
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </div>
@@ -439,7 +355,6 @@
         let rawMensual = [];   // hoja Ventas_Especiales (vista mensual: tabla y gráficos)
         let currentMainTab = 'colocacion';
         let currentSubTab = 'mensual';
-        let currentPerfilSubTab = 'mensual';
         let currentChartMetric = 'solicitudes';
         let currentStackedMetric = 'solicitudes';
         let monthlyChartInstance = null;
@@ -567,9 +482,92 @@
 
         const MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+        // ===== Filtros de selección múltiple (como los filtros de Sheets) =====
+        // Al cargar todo está seleccionado (sin filtro). Al desmarcar valores, solo se muestran los que siguen marcados.
+        const msState = {};   // id -> { items, selected:Set, allLabel }
+        const MS_CALLBACKS = {
+            'renderCurrentSubTab()': () => renderCurrentSubTab(),
+            'renderPerfilSubTab()': () => renderPerfilSubTab()
+        };
+
+        function inSel(id, value) {
+            const st = msState[id];
+            if (!st) return true;
+            if (st.selected.size === st.items.length) return true;   // todo seleccionado = sin filtro
+            return st.selected.has(value);
+        }
+
+        function msLabel(st) {
+            const n = st.selected.size, t = st.items.length;
+            if (n === t) return st.allLabel;
+            if (n === 0) return 'Ninguno';
+            if (n === 1) return st.items.find(i => st.selected.has(i.value)).label;
+            return `${n} de ${t} seleccionados`;
+        }
+
+        function msRefresh(host) {
+            const st = msState[host.id];
+            host.querySelector('.ms-label').textContent = msLabel(st);
+            host.querySelectorAll('.ms-item').forEach(cb => { cb.checked = st.selected.has(st.items[+cb.dataset.i].value); });
+            const all = host.querySelector('.ms-all');
+            all.checked = st.selected.size === st.items.length;
+            all.indeterminate = st.selected.size > 0 && st.selected.size < st.items.length;
+        }
+
+        function msBuild(host, items, allLabel) {
+            const st = msState[host.id] = { items: items, selected: new Set(items.map(i => i.value)), allLabel: allLabel || 'Todos' };
+            const rows = items.map((it, i) => `
+                <label class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" class="ms-item accent-pink-600" data-i="${i}" checked>
+                    <span class="truncate">${it.label}</span>
+                </label>`).join('');
+            host.innerHTML = `
+                <div class="relative">
+                    <button type="button" class="ms-btn w-full flex items-center justify-between gap-2 bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 shadow-sm hover:border-gray-400">
+                        <span class="ms-label truncate"></span>
+                        <i class="fa-solid fa-chevron-down text-[9px] text-gray-400"></i>
+                    </button>
+                    <div class="ms-panel hidden absolute z-30 mt-1 left-0 min-w-full w-max max-w-xs max-h-64 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg p-1.5 text-xs text-gray-700">
+                        <label class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer font-semibold border-b border-gray-100 mb-1">
+                            <input type="checkbox" class="ms-all accent-pink-600" checked> <span>Seleccionar todo</span>
+                        </label>
+                        ${rows}
+                    </div>
+                </div>`;
+
+            host.querySelector('.ms-btn').addEventListener('click', () => {
+                const panel = host.querySelector('.ms-panel');
+                const wasHidden = panel.classList.contains('hidden');
+                document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
+                if (wasHidden) panel.classList.remove('hidden');
+            });
+            host.querySelector('.ms-panel').addEventListener('change', e => {
+                const t = e.target;
+                if (t.classList.contains('ms-all')) {
+                    st.selected = t.checked ? new Set(st.items.map(i => i.value)) : new Set();
+                } else if (t.classList.contains('ms-item')) {
+                    const v = st.items[+t.dataset.i].value;
+                    if (t.checked) st.selected.add(v); else st.selected.delete(v);
+                }
+                msRefresh(host);
+                const cb = MS_CALLBACKS[host.dataset.change];
+                if (cb) cb();
+            });
+            msRefresh(host);
+        }
+
+        // Cierra los listados al hacer clic fuera o con Escape
+        document.addEventListener('click', e => {
+            document.querySelectorAll('.ms-panel').forEach(p => { if (!p.parentElement.contains(e.target)) p.classList.add('hidden'); });
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
+        });
+
         function fillSelect(id, items, allLabel) {
             const el = document.getElementById(id);
             if (!el) return;
+            if (el.classList.contains('ms-host')) { msBuild(el, items, allLabel); return; }
             const prev = el.value;
             el.innerHTML = (allLabel ? `<option value="ALL">${allLabel}</option>` : '') +
                 items.map(i => `<option value="${i.value}">${i.label}</option>`).join('');
@@ -600,7 +598,10 @@
             fillSelect('m-filter-producto', toItems(uniq(rawMensual.map(d => d.producto)).sort()), 'Todos');
             fillSelect('m-filter-segmento', toItems(uniq(rawMensual.map(d => d.segmento)).sort()), 'Todos');
             fillSelect('m-filter-anio', toItems(uniq(mSorted.map(d => d.anio))), 'Todos los Años');
-            fillSelect('chart-filter-tipoVenta', toItems(uniq(mSorted.map(d => d.ventaBase))), null);
+            fillSelect('chart-filter-tipoVenta', toItems(uniq(mSorted.filter(d => !/^bau/i.test(d.venta)).map(d => d.ventaBase))), null);
+            const tiposVenta = toItems(uniq(rawData.map(d => d.tipoVenta)).sort());
+            fillSelect('t-filter-tipoventa', tiposVenta, 'Todos');
+            fillSelect('a-filter-tipoventa', tiposVenta, 'Todos');
             fillSelect('t-filter-producto', productos, 'Todos');
             fillSelect('t-filter-anio', anios, 'Todos');
             fillSelect('t-filter-trimestre', trims, 'Todos');
@@ -608,6 +609,7 @@
             fillSelect('a-filter-anio', anios, 'Todos');
             fillSelect('a-filter-segmento', segmentos, 'Todos');
             fillSelect('a-filter-trimestre', trims, 'Todos');
+            fillSelect('pm-filter-mes', meses, 'Todos los Meses');
             fillSelect('pm-filter-producto', productos, 'Todos');
             fillSelect('pm-filter-segmento', segmentos, 'Todos');
             fillSelect('pm-filter-anio', anios, 'Todos los Años');
@@ -696,8 +698,6 @@
                 </thead>`;
         }
 
-        function selVal(id) { return document.getElementById(id)?.value || 'ALL'; }
-
         function renderCurrentSubTab() {
             if (currentSubTab === 'mensual') {
                 renderMensualTable();
@@ -711,11 +711,7 @@
         }
 
         function renderPerfilSubTab() {
-            if (currentPerfilSubTab === 'mensual') {
-                renderPerfilMensualTable();
-            } else if (currentPerfilSubTab === 'trimestral') {
-                renderPerfilTrimestralTable();
-            }
+            renderPerfilMensualTable();
         }
 
         function setChartMetric(metric) {
@@ -739,13 +735,9 @@
         }
 
         function renderMensualTable() {
-            const mes = selVal('m-filter-mes'), venta = selVal('m-filter-venta'), prod = selVal('m-filter-producto'),
-                  seg = selVal('m-filter-segmento'), anio = selVal('m-filter-anio');
-
             const rows = rawMensual.filter(d =>
-                (mes === 'ALL' || d.mes === mes) && (venta === 'ALL' || d.venta === venta) &&
-                (prod === 'ALL' || d.producto === prod) && (seg === 'ALL' || d.segmento === seg) &&
-                (anio === 'ALL' || d.anio === anio));
+                inSel('m-filter-mes', d.mes) && inSel('m-filter-venta', d.venta) && inSel('m-filter-producto', d.producto) &&
+                inSel('m-filter-segmento', d.segmento) && inSel('m-filter-anio', d.anio));
 
             const cols = groupRows(rows, r => `${r.anio}|${r.mesNum}|${r.venta}`, r => ({ l1: `${r.anio || 's/año'} · ${r.mes || 's/mes'}`, l2: r.venta }));
             const fmt = n => new Intl.NumberFormat('es-MX').format(n);
@@ -760,18 +752,12 @@
         }
 
         function renderPerfilMensualTable() {
-            const prod = selVal('pm-filter-producto'), seg = selVal('pm-filter-segmento'), anio = selVal('pm-filter-anio');
-
             const rows = rawPerfilData.filter(d =>
-                (prod === 'ALL' || d.producto === prod) && (seg === 'ALL' || d.segmento === seg) && (anio === 'ALL' || d.anio === anio));
+                inSel('pm-filter-mes', d.mes) && inSel('pm-filter-producto', d.producto) &&
+                inSel('pm-filter-segmento', d.segmento) && inSel('pm-filter-anio', d.anio));
 
             const cols = groupRows(rows, r => `${r.anio}|${r.mesNum}|${r.venta}`, r => ({ l1: `${r.anio} · ${r.mes}`, l2: r.venta }));
             document.getElementById('table-perfil-mensual').innerHTML = matrixHeader(cols, 'Año · Mes', 'Venta', 'w-48') + buildMatrixBody(cols, perfilMetricRows);
-        }
-
-        function renderPerfilTrimestralTable() {
-            const cols = groupRows(rawPerfilData, r => `${r.anio}|${r.trimestre}`, r => ({ l1: r.anio, l2: r.trimestre }));
-            document.getElementById('table-perfil-trimestral').innerHTML = matrixHeader(cols, 'Año', 'Trimestre', 'w-48') + buildMatrixBody(cols, perfilMetricRows);
         }
 
         // Las gráficas son INDEPENDIENTES de los filtros de la tabla (Mes, Venta, Producto, Segmento, Año):
@@ -785,7 +771,7 @@
             if (!ctx) return;
 
             const selectedCampaign = document.getElementById('chart-filter-tipoVenta')?.value || '';
-            const filteredForChart = chartBaseRows().filter(d => !selectedCampaign || d.ventaBase === selectedCampaign);
+            const filteredForChart = selectedCampaign ? chartBaseRows().filter(d => d.ventaBase === selectedCampaign) : [];
             const years = [...new Set(rawMensual.map(d => d.anio))].filter(Boolean).sort();
 
             const metricValues = years.map(year => {
@@ -800,6 +786,10 @@
                     return items.reduce((acc, curr) => acc + (curr[currentChartMetric] || 0), 0);
                 }
             });
+
+            // Días de venta de la campaña en cada año (el máximo de Dias_Venta_Especial, igual que la tabla)
+            const diasPorAnio = years.map(year =>
+                filteredForChart.filter(d => d.anio === year).reduce((m, d) => Math.max(m, Number(d.dias_venta_especial) || 0), 0));
 
             if (monthlyChartInstance) monthlyChartInstance.destroy();
 
@@ -818,7 +808,17 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: true, position: 'top' } },
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: ctx => {
+                                    const d = diasPorAnio[ctx.dataIndex];
+                                    return `Días de venta: ${d > 0 ? d : '-'}`;
+                                }
+                            }
+                        }
+                    },
                     scales: { y: { border: { dash: [4, 4] }, grid: { color: '#f1f5f9' } } }
                 }
             });
@@ -867,11 +867,9 @@
         }
 
         function renderTrimestralTable() {
-            const prod = selVal('t-filter-producto'), anio = selVal('t-filter-anio'), trim = selVal('t-filter-trimestre'), tipo = selVal('t-filter-tipoventa');
-
             const rows = rawData.filter(d =>
-                (prod === 'ALL' || d.producto === prod) && (anio === 'ALL' || d.anio === anio) &&
-                (trim === 'ALL' || d.trimestre === trim) && (tipo === 'ALL' || d.tipoVenta === tipo));
+                inSel('t-filter-producto', d.producto) && inSel('t-filter-anio', d.anio) &&
+                inSel('t-filter-trimestre', d.trimestre) && inSel('t-filter-tipoventa', d.tipoVenta));
 
             const cols = groupRows(rows, r => `${r.anio}|${r.trimestre}|${r.tipoVenta}`, r => ({ l1: r.anio, l2: `${r.trimestre} · ${r.tipoVenta}` }));
             document.getElementById('table-trimestral').innerHTML = matrixHeader(cols, 'Año', 'Trimestre · Tipo', 'w-44') + buildMatrixBody(cols, metricRows);
@@ -879,13 +877,9 @@
 
         // Resumen: una columna por Tipo de venta (BAU / Especial) con todo lo que pasa los filtros
         function renderAnualTable() {
-            const prod = selVal('a-filter-producto'), anio = selVal('a-filter-anio'), seg = selVal('a-filter-segmento'),
-                  trim = selVal('a-filter-trimestre'), tipo = selVal('a-filter-tipoventa');
-
             const rows = rawData.filter(d =>
-                (prod === 'ALL' || d.producto === prod) && (anio === 'ALL' || d.anio === anio) &&
-                (seg === 'ALL' || d.segmento === seg) && (trim === 'ALL' || d.trimestre === trim) &&
-                (tipo === 'ALL' || d.tipoVenta === tipo));
+                inSel('a-filter-producto', d.producto) && inSel('a-filter-anio', d.anio) && inSel('a-filter-segmento', d.segmento) &&
+                inSel('a-filter-trimestre', d.trimestre) && inSel('a-filter-tipoventa', d.tipoVenta));
 
             const order = { 'BAU': 0, 'Especial': 1 };
             const cols = groupRows(rows, r => r.tipoVenta, r => ({ tipoVenta: r.tipoVenta }))
@@ -956,19 +950,6 @@
             });
 
             renderCurrentSubTab();
-        }
-
-        function switchPerfilSubTab(target) {
-            currentPerfilSubTab = target;
-            document.getElementById('perfil-subtab-view-mensual').classList.toggle('hidden', target !== 'mensual');
-            document.getElementById('perfil-subtab-view-trimestral').classList.toggle('hidden', target !== 'trimestral');
-
-            ['mensual', 'trimestral'].forEach(t => {
-                const btn = document.getElementById(`perfil-subtab-btn-${t}`);
-                if (btn) btn.className = t === target ? "flex-1 py-2 px-4 rounded-md text-xs font-semibold shadow-xs bg-white text-suburbia-pink border border-gray-200 transition-all" : "flex-1 py-2 px-4 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all";
-            });
-
-            renderPerfilSubTab();
         }
 
         function switchMainTab(tab) {
